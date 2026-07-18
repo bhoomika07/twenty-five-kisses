@@ -3,20 +3,20 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import confetti from "canvas-confetti";
 
-import p1 from "../assets/p1.jpg.asset.json";
-import p2 from "../assets/p2.jpg.asset.json";
-import p3 from "../assets/p3.jpg.asset.json";
-import p4 from "../assets/p4.jpg.asset.json";
-import p5 from "../assets/p5.jpg.asset.json";
-import p6 from "../assets/p6.jpg.asset.json";
-import p7 from "../assets/p7.jpg.asset.json";
-import p8 from "../assets/p8.jpg.asset.json";
-
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const PHOTOS = [p1.url, p2.url, p3.url, p4.url, p5.url, p6.url, p7.url, p8.url];
+const PHOTOS = [
+  "/photos/p1.jpg",
+  "/photos/p2.jpg",
+  "/photos/p3.jpg",
+  "/photos/p4.jpg",
+  "/photos/p5.jpg",
+  "/photos/p6.jpg",
+  "/photos/p7.jpg",
+  "/photos/p8.jpg",
+];
 
 type Reason = { icon: string; title: string; body: string };
 
@@ -49,9 +49,26 @@ const REASONS: Reason[] = [
 ];
 
 const MOMENTS = [
-  { title: "The first HSR date", body: "Hours of board games, and I found my happy place.", photo: PHOTOS[4] },
-  { title: "Lockup + a meal we cooked", body: "That mix of comfort TV and food from our own hands — that's us.", photo: PHOTOS[3] },
-  { title: "Safe, even tipsy", body: "I feel safe getting drunk with you. That's rarer than people think.", photo: PHOTOS[6] },
+  {
+    title: "Fun movie dates",
+    body: "Fun Movie dates—the ones where we cry, sometimes get a little naughty, and mostly just cuddle.",
+    photo: PHOTOS[4],
+  },
+  {
+    title: "Our gyoza date",
+    body: "Our gyoza date holds our cutest moments together. That was the year you made my birthday feel like something straight out of a Disney movie.",
+    photo: PHOTOS[3],
+  },
+  {
+    title: "Udaipur",
+    body: "Udaipur lives in my head rent-free. Those gorgeous sunsets and you... honestly, what else could I even ask for?",
+    photo: PHOTOS[5],
+  },
+  {
+    title: "Safe, even tipsy",
+    body: "I feel so safe getting drunk with you. That's rarer than people think.",
+    photo: PHOTOS[7],
+  },
 ];
 
 const SONGS = [
@@ -297,7 +314,7 @@ function Moments() {
         <div className="mb-12 text-center">
           <div className="text-xs uppercase tracking-[0.4em] text-amber-200/70">Chapter Two</div>
           <h2 className="mt-3 font-serif text-5xl text-amber-50 sm:text-6xl" style={{ fontFamily: "Fraunces, serif" }}>
-            Our <span className="italic" style={{ color: "#ffb26b" }}>Bangalore</span> pockets
+            Our Special Moments
           </h2>
           <p className="mt-4 text-amber-100/70">Tiny moments I keep re-reading in my head.</p>
         </div>
@@ -468,19 +485,16 @@ function Finale() {
             Tanay,
           </p>
           <p className="mt-6 font-serif text-lg leading-relaxed text-amber-100/90 sm:text-xl" style={{ fontFamily: "Fraunces, serif" }}>
-            Since you entered my life, it has been beautiful. Despite seeing the worst days with you, the happy ones are too happy to ever leave your side.
+            I love you more than you'll ever know. Honestly, Bangalore didn't feel like home for a single day without you. But now that you are here, every single moment has become special. No matter how mundane Mondays feel, your morning coffee makes them so much better. No matter how shitty my work day has been, one hug from you and dinner together makes it all completely melt away.
           </p>
           <p className="mt-4 text-base leading-relaxed text-amber-100/80">
-            You show up as friend, son, brother, boyfriend — all at once, without ever making a big deal of it. Our house feels empty without you. You throw the trash, bring the milk, fetch every little thing — never complaining, never keeping score. You make sacrifices for us and don't let them count.
+            You have given so much more purpose to my life. I know I can be hard to handle sometimes—I'm a total pain in the ass, and on my luteal days, I am frankly unbearable! But you never leave. I have always been scared that people wouldn't stay, which made me stop pouring my heart out to anyone. But then you came into my life and never gave up on me. You stayed through it all.
           </p>
           <p className="mt-4 text-base leading-relaxed text-amber-100/80">
-            You feel like safety. You feel like home. I feel it in your smell, in the way you patient-through your anger because you can't stand to see me hurt. I feel it when you sit through my favourite shows like they're yours, sip coffee instead of chai (hehe), and listen to my gyan like it's a TED talk.
+            It's easy to forgive someone when they apologize, but you have this beautiful habit of forgiving things I don't even acknowledge sometimes, just to ensure I don't feel bad or upset. You consistently put your pride and ego aside for us, and I see that. I appreciate you, and I am deeply grateful for you every single day of my life.
           </p>
           <p className="mt-4 text-base leading-relaxed text-amber-100/80">
-            You put me first. You plan our weekends when the week's been brutal. You remember the small things. You are gentle in a way only I get to see. And that cutie pattootie blush of yours — please, never grow out of it.
-          </p>
-          <p className="mt-6 font-serif text-xl italic leading-relaxed text-amber-50 sm:text-2xl" style={{ fontFamily: "Fraunces, serif" }}>
-            Just you. Quite simply — I love everything about being yours.
+            Yes, I fully plan to spend the next 100 years of my life making you apologize for things you didn't even do (haha!), but there's no one else I'd rather tease. On this 25th birthday, all the way until our 50s and way beyond, I want to celebrate every single birthday and every big win right by your side.
           </p>
           <p className="mt-8 text-right font-serif text-base italic text-amber-200/80" style={{ fontFamily: "Fraunces, serif" }}>
             — your girl, forever · 25/25 🤍
