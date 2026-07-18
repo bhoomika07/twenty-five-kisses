@@ -79,6 +79,71 @@ const SONGS = [
   "59alvnjzlbX6LaHhXGDZYv",
 ];
 
+/** Song that plays softly in the background after he taps start */
+const AMBIENT_TRACK = SONGS[0];
+
+function AmbientMusic({ active }: { active: boolean }) {
+  const [playing, setPlaying] = useState(true);
+  const [expanded, setExpanded] = useState(true);
+
+  if (!active) return null;
+
+  return (
+    <div className={`fixed z-40 flex flex-col items-start gap-2 ${expanded ? "bottom-4 left-4" : "bottom-4 left-4"}`}>
+      <AnimatePresence>
+        {playing && expanded && (
+          <motion.div
+            key="player"
+            initial={{ opacity: 0, y: 10, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.96 }}
+            className="w-[min(300px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-white/15 bg-black/55 p-1 shadow-2xl backdrop-blur"
+            style={{ boxShadow: "0 20px 50px -24px #ff6b3588" }}
+          >
+            <iframe
+              title="ambient-song"
+              src={`https://open.spotify.com/embed/track/${AMBIENT_TRACK}?utm_source=generator&theme=0`}
+              width="100%"
+              height="80"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="eager"
+              className="rounded-xl"
+            />
+            <p className="px-2 pb-1.5 pt-0.5 text-[10px] uppercase tracking-widest text-amber-100/50">
+              our song · press play if it needs a nudge
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => {
+            setPlaying((p) => {
+              const next = !p;
+              if (next) setExpanded(true);
+              return next;
+            });
+          }}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/50 text-base shadow-xl backdrop-blur transition hover:scale-105"
+          aria-label={playing ? "Stop music" : "Play music"}
+          title={playing ? "Stop music" : "Play our song"}
+        >
+          {playing ? "⏹" : "♪"}
+        </button>
+        {playing && (
+          <button
+            onClick={() => setExpanded((e) => !e)}
+            className="rounded-full bg-white/10 px-3 py-1.5 text-[10px] uppercase tracking-widest text-amber-100/70 backdrop-blur hover:bg-white/15"
+          >
+            {expanded ? "Minimize" : "Our song"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function burstConfetti(x = 0.5, y = 0.6) {
   const colors = ["#ff6b35", "#f7931e", "#e84393", "#f6c453", "#ffd6e0", "#6c5ce7"];
   confetti({ particleCount: 90, spread: 75, origin: { x, y }, colors, scalar: 1.05, ticks: 220 });
@@ -685,6 +750,7 @@ function Index() {
       <footer className="px-4 pb-12 pt-6 text-center text-xs uppercase tracking-[0.3em] text-amber-100/40">
         made with 🤍 · for tanay · 18.07
       </footer>
+      <AmbientMusic active={started} />
       <HandCameraDock
         enabled={cameraOn}
         status={gestures.status}
