@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type MutableRefObject, type RefObject } from "react";
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import confetti from "canvas-confetti";
+import { useHandGestures, type GestureStatus } from "../hooks/use-hand-gestures";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -108,7 +109,13 @@ function Ember({ i }: { i: number }) {
   );
 }
 
-function Landing({ onStart }: { onStart: () => void }) {
+function Landing({
+  onStartWithCamera,
+  onStartTapOnly,
+}: {
+  onStartWithCamera: () => void;
+  onStartTapOnly: () => void;
+}) {
   return (
     <section className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-6 text-center">
       <div className="absolute inset-0 -z-10" style={{ background: "radial-gradient(1200px 700px at 50% 10%, #ff8a3d33, transparent 60%), radial-gradient(900px 600px at 80% 90%, #e8439333, transparent 60%), linear-gradient(180deg, #1a0b1f 0%, #2b0f2f 60%, #3a1330 100%)" }} />
@@ -146,19 +153,41 @@ function Landing({ onStart }: { onStart: () => void }) {
         25 reasons you're a gem, a few of our moments, our songs — and a letter waiting at the end. From your girl.
       </motion.p>
 
-      <motion.button
+      <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 1.3 }}
-        onClick={() => {
-          burstConfetti(0.5, 0.5);
-          onStart();
-        }}
-        className="mt-10 rounded-full px-8 py-4 text-base font-semibold text-white shadow-2xl transition-transform hover:scale-105 active:scale-95"
-        style={{ background: "linear-gradient(135deg,#ff6b35,#e84393)", boxShadow: "0 20px 60px -20px #e8439399" }}
+        className="mt-10 flex flex-col items-center gap-3"
       >
-        Unwrap your day →
-      </motion.button>
+        <button
+          onClick={() => {
+            burstConfetti(0.5, 0.5);
+            onStartWithCamera();
+          }}
+          className="rounded-full px-8 py-4 text-base font-semibold text-white shadow-2xl transition-transform hover:scale-105 active:scale-95"
+          style={{ background: "linear-gradient(135deg,#ff6b35,#e84393)", boxShadow: "0 20px 60px -20px #e8439399" }}
+        >
+          Turn on camera · pinch to unwrap
+        </button>
+        <button
+          onClick={() => {
+            burstConfetti(0.5, 0.5);
+            onStartTapOnly();
+          }}
+          className="text-sm uppercase tracking-widest text-amber-100/60 underline underline-offset-4 transition hover:text-amber-100"
+        >
+          Skip camera / tap instead
+        </button>
+      </motion.div>
+
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.65 }}
+        transition={{ delay: 1.8 }}
+        className="mt-6 max-w-sm text-xs leading-relaxed text-amber-100/55"
+      >
+        Pinch fingers together, then open them — each pinch-out unwraps the next gift. Stays on your device; nothing is uploaded.
+      </motion.p>
 
       <motion.div
         initial={{ opacity: 0 }}
@@ -173,22 +202,87 @@ function Landing({ onStart }: { onStart: () => void }) {
   );
 }
 
-function ReasonCard({ r, i, opened, onOpen }: { r: Reason; i: number; opened: boolean; onOpen: () => void }) {
+function gestureHint(status: GestureStatus, pinched: boolean, handSeen: boolean, error: string | null) {
+  if (status === "loading") return "Loading hand magic…";
+  if (status === "error") return error ? `Camera issue: ${error}` : "Camera unavailable — tap gifts instead";
+  if (status === "ready" && !handSeen) return "Show your hand to the camera";
+  if (pinched) return "Now open your fingers to unwrap ✦";
+  if (handSeen) return "Pinch in… then out to unwrap";
+  return "Camera ready";
+}
+
+function HandCameraDock({
+  enabled,
+  status,
+  error,
+  pinched,
+  handSeen,
+  videoRef,
+  canvasRef,
+  onStop,
+}: {
+  enabled: boolean;
+  status: GestureStatus;
+  error: string | null;
+  pinched: boolean;
+  handSeen: boolean;
+  videoRef: RefObject<HTMLVideoElement | null>;
+  canvasRef: RefObject<HTMLCanvasElement | null>;
+  onStop: () => void;
+}) {
+  if (!enabled) return null;
+  return (
+    <div className="fixed bottom-4 right-4 z-50 flex w-[200px] flex-col gap-2 sm:w-[240px]">
+      <div
+        className="relative overflow-hidden rounded-2xl border border-white/15 bg-black/50 shadow-2xl backdrop-blur"
+        style={{ boxShadow: "0 20px 50px -20px #e8439388" }}
+      >
+        <video ref={videoRef} className="aspect-[4/3] w-full scale-x-[-1] object-cover" playsInline muted autoPlay />
+        <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full scale-x-[-1]" />
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2">
+          <p className="text-[11px] font-medium leading-snug text-amber-50">
+            {gestureHint(status, pinched, handSeen, error)}
+          </p>
+        </div>
+        {pinched && (
+          <div className="absolute left-2 top-2 rounded-full bg-[#e84393] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+            pinched
+          </div>
+        )}
+      </div>
+      <button
+        onClick={onStop}
+        className="rounded-full bg-white/10 px-3 py-1.5 text-[10px] uppercase tracking-widest text-amber-100/70 backdrop-blur hover:bg-white/15"
+      >
+        Turn camera off
+      </button>
+    </div>
+  );
+}
+
+function ReasonCard({
+  r,
+  i,
+  opened,
+  onOpen,
+  buttonRef,
+}: {
+  r: Reason;
+  i: number;
+  opened: boolean;
+  onOpen: () => void;
+  buttonRef?: (el: HTMLButtonElement | null) => void;
+}) {
   const ref = useRef<HTMLButtonElement>(null);
   const handle = () => {
-    if (!opened) {
-      const rect = ref.current?.getBoundingClientRect();
-      if (rect) {
-        burstConfetti((rect.left + rect.width / 2) / window.innerWidth, (rect.top + rect.height / 2) / window.innerHeight);
-      } else {
-        burstConfetti();
-      }
-    }
-    onOpen();
+    if (!opened) onOpen();
   };
   return (
     <motion.button
-      ref={ref}
+      ref={(el) => {
+        ref.current = el;
+        buttonRef?.(el);
+      }}
       onClick={handle}
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
@@ -235,7 +329,7 @@ function ReasonCard({ r, i, opened, onOpen }: { r: Reason; i: number; opened: bo
             </motion.div>
           ) : (
             <motion.div key="closed" exit={{ opacity: 0 }} className="text-white/95">
-              <div className="font-serif text-xl italic" style={{ fontFamily: "Fraunces, serif" }}>tap to unwrap</div>
+              <div className="font-serif text-xl italic" style={{ fontFamily: "Fraunces, serif" }}>tap or pinch</div>
               <div className="mt-1 text-xs uppercase tracking-widest text-white/70">reason #{i + 1}</div>
             </motion.div>
           )}
@@ -245,9 +339,47 @@ function ReasonCard({ r, i, opened, onOpen }: { r: Reason; i: number; opened: bo
   );
 }
 
-function ReasonsGrid() {
+function ReasonsGrid({
+  cameraOn,
+  unwrapNextRef,
+}: {
+  cameraOn: boolean;
+  unwrapNextRef: MutableRefObject<(() => void) | null>;
+}) {
   const [opened, setOpened] = useState<Set<number>>(new Set());
   const openedCount = opened.size;
+  const cardRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const openOne = (i: number) => {
+    let didOpen = false;
+    setOpened((s) => {
+      if (s.has(i)) return s;
+      didOpen = true;
+      const n = new Set(s);
+      n.add(i);
+      return n;
+    });
+    if (!didOpen) return;
+    const el = cardRefs.current[i];
+    const rect = el?.getBoundingClientRect();
+    if (rect) {
+      burstConfetti((rect.left + rect.width / 2) / window.innerWidth, (rect.top + rect.height / 2) / window.innerHeight);
+      el?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } else {
+      burstConfetti();
+    }
+  };
+
+  useEffect(() => {
+    unwrapNextRef.current = () => {
+      const next = REASONS.findIndex((_, i) => !opened.has(i));
+      if (next === -1) return;
+      openOne(next);
+    };
+    return () => {
+      unwrapNextRef.current = null;
+    };
+  }, [opened, unwrapNextRef]);
 
   const openAll = () => {
     setOpened(new Set(REASONS.map((_, i) => i)));
@@ -264,7 +396,11 @@ function ReasonsGrid() {
           <h2 className="mt-3 font-serif text-5xl text-amber-50 sm:text-6xl" style={{ fontFamily: "Fraunces, serif" }}>
             25 reasons you're <span className="italic" style={{ color: "#ffb26b" }}>my gem</span>
           </h2>
-          <p className="mt-4 max-w-lg text-amber-100/70">Tap each little gift. One reason for every year of you.</p>
+          <p className="mt-4 max-w-lg text-amber-100/70">
+            {cameraOn
+              ? "Pinch in, then out — or tap any gift. One reason for every year of you."
+              : "Tap each little gift. One reason for every year of you."}
+          </p>
           <div className="mt-6 flex items-center gap-3">
             <div className="h-2 w-48 overflow-hidden rounded-full bg-white/10">
               <motion.div
@@ -292,13 +428,10 @@ function ReasonsGrid() {
               r={r}
               i={i}
               opened={opened.has(i)}
-              onOpen={() =>
-                setOpened((s) => {
-                  const n = new Set(s);
-                  n.add(i);
-                  return n;
-                })
-              }
+              buttonRef={(el) => {
+                cardRefs.current[i] = el;
+              }}
+              onOpen={() => openOne(i)}
             />
           ))}
         </div>
@@ -507,13 +640,29 @@ function Finale() {
 
 function Index() {
   const [started, setStarted] = useState(false);
+  const [cameraOn, setCameraOn] = useState(false);
   const reasonsRef = useRef<HTMLDivElement>(null);
+  const unwrapNextRef = useRef<(() => void) | null>(null);
+
+  const gestures = useHandGestures({
+    enabled: cameraOn,
+    onPinchOut: () => unwrapNextRef.current?.(),
+  });
 
   useEffect(() => {
     if (started) {
       setTimeout(() => reasonsRef.current?.scrollIntoView({ behavior: "smooth" }), 150);
     }
   }, [started]);
+
+  const startWithCamera = () => {
+    setCameraOn(true);
+    setStarted(true);
+  };
+  const startTapOnly = () => {
+    setCameraOn(false);
+    setStarted(true);
+  };
 
   const bg = useMemo(
     () => ({
@@ -525,9 +674,9 @@ function Index() {
 
   return (
     <main className="min-h-screen font-sans text-amber-50" style={{ ...bg, fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
-      <Landing onStart={() => setStarted(true)} />
+      <Landing onStartWithCamera={startWithCamera} onStartTapOnly={startTapOnly} />
       <div ref={reasonsRef}>
-        <ReasonsGrid />
+        <ReasonsGrid cameraOn={cameraOn} unwrapNextRef={unwrapNextRef} />
       </div>
       <PhotoStrip />
       <Moments />
@@ -536,6 +685,16 @@ function Index() {
       <footer className="px-4 pb-12 pt-6 text-center text-xs uppercase tracking-[0.3em] text-amber-100/40">
         made with 🤍 · for tanay · 18.07
       </footer>
+      <HandCameraDock
+        enabled={cameraOn}
+        status={gestures.status}
+        error={gestures.error}
+        pinched={gestures.pinched}
+        handSeen={gestures.handSeen}
+        videoRef={gestures.videoRef}
+        canvasRef={gestures.canvasRef}
+        onStop={() => setCameraOn(false)}
+      />
     </main>
   );
 }
